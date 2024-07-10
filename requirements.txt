@@ -1,4 +1,5 @@
-# protobuf~=3.19.0
+protobuf~=3.19.0
+pysqlite3-binary
 # pinecone-client
 # onnxruntime
 chromadb
