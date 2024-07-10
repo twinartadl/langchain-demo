@@ -1,7 +1,7 @@
 streamlit
 langchain
 chromadb
-azure-openai
+azure-identity
 openai
 pypdf
 python-docx

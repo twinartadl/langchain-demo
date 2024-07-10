@@ -58,7 +58,7 @@ if not os.path.exists(UPLOAD_DIR):
 store = {}
 
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
-    print("CALLED " + session_id)
+    # print("CALLED " + session_id)
     if session_id not in store:
         store[session_id] = StreamlitChatMessageHistory("deeeplabs")
     return store[session_id]
