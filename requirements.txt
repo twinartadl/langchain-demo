@@ -1,8 +1,7 @@
-# protobuf~=3.19.0
-# streamlit-chromadb-connection
+protobuf~=3.19.0
 # pinecone-client
 # onnxruntime
-# chromadb
+chromadb
 # streamlit
 langchain
 azure-identity
@@ -13,6 +12,7 @@ tiktoken
 langchain-community
 docx2txt
 langchain-openai
+streamlit-chromadb-connection
 
 # Others
 altair==5.3.0
