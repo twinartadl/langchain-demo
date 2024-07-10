@@ -7,4 +7,5 @@ pypdf
 python-docx
 tiktoken
 langchain-community
-docx2txt==0.8
+docx2txt
+langchain-openai
