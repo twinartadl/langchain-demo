@@ -16,6 +16,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import AIMessage, HumanMessage
+from streamlit_chromadb_connection.chromadb_connection import ChromadbConnection
 import time
 
 session_id = str(time.time())
@@ -36,16 +37,19 @@ embeddings = AzureOpenAIEmbeddings(
 
 st.title("Deeeplabs AI Assistant")
 
+configuration = {
+    "client": "PersistentClient",
+    "path": "/tmp/.chroma"
+}
+collection_name = "documents_collection"
+
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if "vector_store" not in st.session_state:
-    # Try to load existing vector store
-    if os.path.exists("./chroma_db"):
-        st.session_state.vector_store = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
-    else:
-        st.session_state.vector_store = None
+    st.session_state.vector_store = st.connection("chromadb", type=ChromaDBConnection, embedding_function=embeddings)
+
 
 if "uploaded_files" not in st.session_state:
     st.session_state.uploaded_files = []
