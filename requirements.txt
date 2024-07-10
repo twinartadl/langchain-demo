@@ -3,7 +3,8 @@ pysqlite3-binary
 # pinecone-client
 # onnxruntime
 chromadb
-# streamlit
+pandas
+streamlit
 langchain
 azure-identity
 openai
@@ -13,7 +14,7 @@ tiktoken
 langchain-community
 docx2txt
 langchain-openai
-streamlit-chromadb-connection
+# streamlit-chromadb-connection
 
 # Others
 # altair==5.3.0

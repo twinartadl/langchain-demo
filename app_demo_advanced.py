@@ -20,7 +20,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import AIMessage, HumanMessage
-from streamlit_chromadb_connection.chromadb_connection import ChromadbConnection
+from chromadb_connection import ChromaDBConnection
 import time
 
 session_id = str(time.time())
