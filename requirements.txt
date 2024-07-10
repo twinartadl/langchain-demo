@@ -1,5 +1,5 @@
-protobuf==3.20.1
-streamlit
+protobuf~=3.19.0
+# streamlit
 langchain
 chromadb
 azure-identity
