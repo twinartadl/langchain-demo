@@ -2,3 +2,4 @@ chroma_db/*
 uploaded_files/*
 *.pyc
 *.md
+faiss_index/*

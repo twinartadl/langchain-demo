@@ -1,1 +1,0 @@
-from chromadb_connection.connection import ChromaDBConnection as ChromaDBConnection

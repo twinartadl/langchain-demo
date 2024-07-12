@@ -16,6 +16,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_community.vectorstores import FAISS
 import time
 
 session_id = str(time.time())
@@ -53,8 +54,8 @@ if "messages" not in st.session_state:
 
 if "vector_store" not in st.session_state:
     # Try to load existing vector store
-    if os.path.exists("./chroma_db"):
-        st.session_state.vector_store = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+    if os.path.exists("./faiss_index"):
+        st.session_state.vector_store = FAISS.load_local("./faiss_index", embeddings)
     else:
         st.session_state.vector_store = None
 
@@ -85,14 +86,9 @@ def remove_all_files():
         if os.path.isfile(file_path):
             os.unlink(file_path)
     
-    # Empty the vector store
     if st.session_state.vector_store is not None:
-        # Get all document IDs
-        all_ids = st.session_state.vector_store.get()['ids']
-        # Delete all documents
-        if all_ids:
-            st.session_state.vector_store.delete(ids=all_ids)
-        st.session_state.vector_store.persist()
+        st.session_state.vector_store = FAISS.from_texts([""], embeddings)
+        st.session_state.vector_store.save_local("./faiss_index")
     
     # Reset uploaded files in session state
     st.session_state.uploaded_files = []
@@ -147,11 +143,11 @@ if uploaded_file:
         texts = text_splitter.split_documents(documents)
 
         if st.session_state.vector_store is None:
-            st.session_state.vector_store = Chroma.from_documents(texts, embeddings, persist_directory="./chroma_db")
+            st.session_state.vector_store = FAISS.from_documents(texts, embeddings)
         else:
             st.session_state.vector_store.add_documents(texts)
 
-        st.session_state.vector_store.persist()
+        st.session_state.vector_store.save_local("./faiss_index")
 
         st.success(f"Document '{uploaded_file.name}' uploaded and processed successfully!")
 
