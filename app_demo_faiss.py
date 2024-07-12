@@ -194,7 +194,7 @@ qa_chain = None
 rag_chain = None
 
 if st.session_state.vector_store:
-    retriever = st.session_state.vector_store.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.7})
+    retriever = st.session_state.vector_store.as_retriever(search_kwargs={"k": 3})
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
     history_aware_retriever = create_history_aware_retriever(
