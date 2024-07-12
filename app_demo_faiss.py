@@ -55,7 +55,7 @@ if "messages" not in st.session_state:
 if "vector_store" not in st.session_state:
     # Try to load existing vector store
     if os.path.exists("./faiss_index"):
-        st.session_state.vector_store = FAISS.load_local("./faiss_index", embeddings)
+        st.session_state.vector_store = FAISS.load_local("./faiss_index", embeddings, allow_dangerous_deserialization=True)
     else:
         st.session_state.vector_store = None
 
