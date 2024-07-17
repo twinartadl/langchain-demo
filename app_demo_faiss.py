@@ -18,6 +18,10 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.vectorstores import FAISS
 import time
+from typing import List
+
+from langchain_core.documents import Document
+from langchain_core.runnables import chain
 
 session_id = str(time.time())
 
@@ -158,7 +162,7 @@ user_defined_system_prompt = ""
 
 with st.sidebar:
     # Input field for system prompt
-    user_defined_system_prompt = st.text_area("Set System Prompt:", value="You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, say that you don't know. Use three sentences maximum and keep the answer concise.")
+    user_defined_system_prompt = st.text_area("Set System Prompt:", value="You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, say that you don't know. Do not answer the question from external sources apart from the documents. If no matching document is found, say you don't know. Use three sentences maximum and keep the answer concise.")
 
 user_defined_system_prompt += "\n\n{context}"
 
@@ -194,7 +198,9 @@ qa_chain = None
 rag_chain = None
 
 if st.session_state.vector_store:
-    retriever = st.session_state.vector_store.as_retriever(search_kwargs={"k": 3})
+    retriever = st.session_state.vector_store.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.7})
+
+    # retriever = custom_retriever
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
     history_aware_retriever = create_history_aware_retriever(
@@ -216,7 +222,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-history = get_session_history(session_id)
+# history = get_session_history(session_id)
 
 # Chat input
 if prompt := st.chat_input("Your message here..."):
@@ -230,8 +236,8 @@ if prompt := st.chat_input("Your message here..."):
             print(response)
             st.markdown(response["answer"])
             st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
-            history.add_message(HumanMessage(content=prompt))
-            history.add_message(AIMessage(content=response["answer"]))
+            # history.add_message(HumanMessage(content=prompt))
+            # history.add_message(AIMessage(content=response["answer"]))
             
             # Display source documents
             with st.expander("Source Documents"):
@@ -246,5 +252,5 @@ if prompt := st.chat_input("Your message here..."):
             response = llm.predict(prompt)
             st.markdown(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
-            history.add_message(HumanMessage(content=prompt))
-            history.add_message(AIMessage(content=response))
+            # history.add_message(HumanMessage(content=prompt))
+            # history.add_message(AIMessage(content=response))

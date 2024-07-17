@@ -234,8 +234,8 @@ if prompt := st.chat_input("Your message here..."):
             print(response)
             st.markdown(response["answer"])
             st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
-            history.add_message(HumanMessage(content=prompt))
-            history.add_message(AIMessage(content=response["answer"]))
+            # history.add_message(HumanMessage(content=prompt))
+            # history.add_message(AIMessage(content=response["answer"]))
             
             # Display source documents
             with st.expander("Source Documents"):
@@ -250,5 +250,5 @@ if prompt := st.chat_input("Your message here..."):
             response = llm.predict(prompt)
             st.markdown(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
-            history.add_message(HumanMessage(content=prompt))
-            history.add_message(AIMessage(content=response))
+            # history.add_message(HumanMessage(content=prompt))
+            # history.add_message(AIMessage(content=response))
