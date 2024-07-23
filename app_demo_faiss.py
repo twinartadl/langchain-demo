@@ -269,7 +269,7 @@ if prompt := st.chat_input("Your message here..."):
             response = qa_chain.invoke({"input": prompt}, config={"configurable": {"session_id": session_id}})
             if not response["context"]:
                 st.session_state.messages.append({"role": "assistant", "content": not_document_response})
-                st.markdown(not_found_response)
+                st.markdown(not_document_response)
                 # st.markdown("Please upload some documents first to get started.")
             else:
                 st.markdown(response["answer"])
