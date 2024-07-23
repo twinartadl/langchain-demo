@@ -232,6 +232,7 @@ for message in st.session_state.messages:
 history = get_session_history(session_id)
 
 not_found_response = "Please upload some documents first to get started."
+not_document_response = "No relevant document is found."
 
 # Chat input
 if prompt := st.chat_input("Your message here..."):
@@ -267,7 +268,7 @@ if prompt := st.chat_input("Your message here..."):
         if qa_chain:
             response = qa_chain.invoke({"input": prompt}, config={"configurable": {"session_id": session_id}})
             if not response["context"]:
-                st.session_state.messages.append({"role": "assistant", "content": not_found_response})
+                st.session_state.messages.append({"role": "assistant", "content": not_document_response})
                 st.markdown(not_found_response)
                 # st.markdown("Please upload some documents first to get started.")
             else:
