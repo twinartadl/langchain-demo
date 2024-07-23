@@ -41,7 +41,7 @@ with st.sidebar:
     )
 
 
-llm = AzureChatOpenAI(deployment_name=deployment_name, temperature=0, max_tokens=512, max_retries=2)
+llm = AzureChatOpenAI(deployment_name=deployment_name, temperature=0)
 
 # Initialize Azure OpenAI embedding and LLM
 embeddings = AzureOpenAIEmbeddings(
@@ -163,6 +163,14 @@ if uploaded_file:
 
         st.experimental_rerun()
 
+def display_source_documents(response):
+    with st.expander("Source Documents", expanded=False):
+        for doc in response["context"]:
+            st.markdown(f"**Source:** {os.path.basename(doc.metadata['source'])}")
+            st.markdown(f"**Excerpt:** {doc.page_content}")
+            st.markdown("---")
+            break  # Display only the first document
+
 user_defined_system_prompt = ""
 
 with st.sidebar:
@@ -203,7 +211,7 @@ qa_chain = None
 rag_chain = None
 
 if st.session_state.vector_store:
-    retriever = st.session_state.vector_store.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.7, "k": 3})
+    retriever = st.session_state.vector_store.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.7, "k": 5})
 
     # retriever = st.session_state.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 
@@ -228,6 +236,8 @@ if st.session_state.vector_store:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        if message["role"] == "assistant" and "source_documents" in message:
+            display_source_documents(message["source_documents"])
 
 history = get_session_history(session_id)
 
@@ -241,49 +251,22 @@ if prompt := st.chat_input("Your message here..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # if qa_chain:
-        #     response = qa_chain.invoke({"input": prompt,}, config={"configurable": {"session_id": session_id}})
-        #     print(response)
-        #     st.markdown(response["answer"])
-        #     st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
-        #     # history.add_message(HumanMessage(content=prompt))
-        #     # history.add_message(AIMessage(content=response["answer"]))
-            
-        #     # Display source documents
-        #     with st.expander("Source Documents"):
-        #         for doc in response["context"]:
-        #             st.markdown(f"**Content:** {doc.page_content}")
-        #             st.markdown(f"**Source:** {os.path.basename(doc.metadata['source'])}")
-        #             st.markdown("---")
-
-        #             break
-
-        # else:
-        #     response = llm.predict(prompt)
-        #     st.markdown(response)
-        #     st.session_state.messages.append({"role": "assistant", "content": response})
-        #     # history.add_message(HumanMessage(content=prompt))
-        #     # history.add_message(AIMessage(content=response))
-
         if qa_chain:
             response = qa_chain.invoke({"input": prompt}, config={"configurable": {"session_id": session_id}})
             if not response["context"]:
-                st.session_state.messages.append({"role": "assistant", "content": not_document_response})
-                st.markdown(not_document_response)
-                # st.markdown("Please upload some documents first to get started.")
+                content = not_document_response
             else:
-                st.markdown(response["answer"])
-                st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
+                content = response["answer"]
                 
-                # Display source documents
-                with st.expander("Source Documents"):
-                    for doc in response["context"]:
-                        st.markdown(f"**Source:** {os.path.basename(doc.metadata['source'])}")
-                        st.markdown(f"**Excerpt:** {doc.page_content}")
-                        st.markdown("---")
-
-                        break
+            st.markdown(content)
+            message = {"role": "assistant", "content": content}
+            
+            if response["context"]:
+                message["source_documents"] = response
+                display_source_documents(response)
+            
+            st.session_state.messages.append(message)
         else:
-            # st.markdown("Please upload some documents first to get started.")
-            st.session_state.messages.append({"role": "assistant", "content": not_found_response})
-            st.markdown(not_found_response)
+            content = not_found_response
+            st.markdown(content)
+            st.session_state.messages.append({"role": "assistant", "content": content})
