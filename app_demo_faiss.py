@@ -203,7 +203,7 @@ qa_chain = None
 rag_chain = None
 
 if st.session_state.vector_store:
-    retriever = st.session_state.vector_store.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.7})
+    retriever = st.session_state.vector_store.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.7, "k": 3})
 
     # retriever = st.session_state.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 
