@@ -41,7 +41,7 @@ with st.sidebar:
     )
 
 
-llm = AzureChatOpenAI(deployment_name=deployment_name, temperature=0)
+llm = AzureChatOpenAI(deployment_name=deployment_name, temperature=0.1)
 
 # Initialize Azure OpenAI embedding and LLM
 embeddings = AzureOpenAIEmbeddings(
@@ -74,7 +74,6 @@ if not os.path.exists(UPLOAD_DIR):
 store = {}
 
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
-    print("CALLED " + session_id)
     if session_id not in store:
         store[session_id] = StreamlitChatMessageHistory("deeeplabs")
     return store[session_id]
@@ -97,14 +96,16 @@ def remove_all_files():
     # Reset uploaded files in session state
     st.session_state.uploaded_files = []
     
-    st.success("All uploaded files have been removed and the knowledge base has been reset.")
+    st.success("Knowledgebase has been reset")
+
+    st.experimental_rerun()
 
 # Update the list of uploaded files
 st.session_state.uploaded_files = list_uploaded_files()
 
 with st.sidebar:
     # Display the list of uploaded files
-    st.subheader("Uploaded Files:")
+    st.subheader("Knowledgebase:")
     col1, col2 = st.columns([3, 1])
     with col1:
         if st.session_state.uploaded_files:
@@ -122,7 +123,7 @@ uploaded_file = None
 
 with st.sidebar:
     # File uploader
-    uploaded_file = st.file_uploader("Upload a document (TXT, PDF, or DOCX)", type=["txt", "pdf", "docx"])
+    uploaded_file = st.file_uploader("Upload to knowledgebase (TXT, PDF, or DOCX)", type=["txt", "pdf", "docx"])
 
 if uploaded_file:
     # Check if the file is already processed
@@ -158,12 +159,16 @@ if uploaded_file:
         # Update the list of uploaded files
         st.session_state.uploaded_files = list_uploaded_files()
 
+        uploaded_file = None
+
+        st.experimental_rerun()
+
 user_defined_system_prompt = ""
 
 with st.sidebar:
     # Input field for system prompt
-    user_defined_system_prompt = st.text_area("Set System Prompt:", value="You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, say that you don't know. Do not answer the question from external sources apart from the documents. If no matching document is found, say you don't know. Use three sentences maximum and keep the answer concise.")
-
+    # user_defined_system_prompt = st.text_area("Set System Prompt:", value="You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, say that you don't know. Do not answer the question from external sources apart from the documents. If no matching document is found, say you don't know. Use three sentences maximum and keep the answer concise.")
+    user_defined_system_prompt = st.text_area("System Prompt:", value="You are an assistant for question-answering tasks. Use ONLY the following pieces of retrieved context to answer the question. If the answer cannot be found in the provided context, say that you don't have enough information to answer. Do not use any external knowledge. Use three sentences maximum and keep the answer concise.")
 user_defined_system_prompt += "\n\n{context}"
 
 
@@ -200,6 +205,8 @@ rag_chain = None
 if st.session_state.vector_store:
     retriever = st.session_state.vector_store.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.7})
 
+    # retriever = st.session_state.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+
     # retriever = custom_retriever
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
@@ -222,7 +229,9 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# history = get_session_history(session_id)
+history = get_session_history(session_id)
+
+not_found_response = "Please upload some documents first to get started."
 
 # Chat input
 if prompt := st.chat_input("Your message here..."):
@@ -231,26 +240,49 @@ if prompt := st.chat_input("Your message here..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        if qa_chain:
-            response = qa_chain.invoke({"input": prompt,}, config={"configurable": {"session_id": session_id}})
-            print(response)
-            st.markdown(response["answer"])
-            st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
-            # history.add_message(HumanMessage(content=prompt))
-            # history.add_message(AIMessage(content=response["answer"]))
+        # if qa_chain:
+        #     response = qa_chain.invoke({"input": prompt,}, config={"configurable": {"session_id": session_id}})
+        #     print(response)
+        #     st.markdown(response["answer"])
+        #     st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
+        #     # history.add_message(HumanMessage(content=prompt))
+        #     # history.add_message(AIMessage(content=response["answer"]))
             
-            # Display source documents
-            with st.expander("Source Documents"):
-                for doc in response["context"]:
-                    st.markdown(f"**Content:** {doc.page_content}")
-                    st.markdown(f"**Source:** {os.path.basename(doc.metadata['source'])}")
-                    st.markdown("---")
+        #     # Display source documents
+        #     with st.expander("Source Documents"):
+        #         for doc in response["context"]:
+        #             st.markdown(f"**Content:** {doc.page_content}")
+        #             st.markdown(f"**Source:** {os.path.basename(doc.metadata['source'])}")
+        #             st.markdown("---")
 
-                    break
+        #             break
 
+        # else:
+        #     response = llm.predict(prompt)
+        #     st.markdown(response)
+        #     st.session_state.messages.append({"role": "assistant", "content": response})
+        #     # history.add_message(HumanMessage(content=prompt))
+        #     # history.add_message(AIMessage(content=response))
+
+        if qa_chain:
+            response = qa_chain.invoke({"input": prompt}, config={"configurable": {"session_id": session_id}})
+            if not response["context"]:
+                st.session_state.messages.append({"role": "assistant", "content": not_found_response})
+                st.markdown(not_found_response)
+                # st.markdown("Please upload some documents first to get started.")
+            else:
+                st.markdown(response["answer"])
+                st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
+                
+                # Display source documents
+                with st.expander("Source Documents"):
+                    for doc in response["context"]:
+                        st.markdown(f"**Source:** {os.path.basename(doc.metadata['source'])}")
+                        st.markdown(f"**Excerpt:** {doc.page_content}")
+                        st.markdown("---")
+
+                        break
         else:
-            response = llm.predict(prompt)
-            st.markdown(response)
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            # history.add_message(HumanMessage(content=prompt))
-            # history.add_message(AIMessage(content=response))
+            # st.markdown("Please upload some documents first to get started.")
+            st.session_state.messages.append({"role": "assistant", "content": not_found_response})
+            st.markdown(not_found_response)
