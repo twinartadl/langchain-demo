@@ -41,7 +41,7 @@ with st.sidebar:
     )
 
 
-llm = AzureChatOpenAI(deployment_name=deployment_name, temperature=0.1)
+llm = AzureChatOpenAI(deployment_name=deployment_name, temperature=0, max_tokens=512, max_retries=2)
 
 # Initialize Azure OpenAI embedding and LLM
 embeddings = AzureOpenAIEmbeddings(
