@@ -19,11 +19,39 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.vectorstores import FAISS
 import time
 from typing import List
-
+from langchain_community.chat_message_histories import (
+    PostgresChatMessageHistory,
+)
 from langchain_core.documents import Document
 from langchain_core.runnables import chain
+import warnings
+# Suppress specific warning
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-session_id = str(time.time())
+
+default_session_id = str(time.time())
+
+# Check if session_id is already in session_state
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = default_session_id
+# Create a sidebar for input
+with st.sidebar:
+    input_session_id = st.text_input("Insert Session ID", st.session_state.session_id)
+    if input_session_id:
+        st.session_state.session_id = input_session_id
+# Use the session_id from session_state
+session_id = st.session_state.session_id
+# Print the session ID
+st.write("Session ID: ", session_id)
+
+
+
+
+
+postgres_history = PostgresChatMessageHistory(
+    connection_string="postgresql://root:root@localhost:5433/langchain_demo_faiss",
+    session_id=session_id,
+)
 
 # Set up Azure OpenAI credentials
 os.environ["OPENAI_API_VERSION"] = "2023-12-01-preview"
@@ -31,6 +59,10 @@ os.environ["AZURE_OPENAI_ENDPOINT"] = "https://cog-kguqugfu5p2ki.openai.azure.co
 os.environ["AZURE_OPENAI_API_KEY"] = "4657af893faf48e5bd81208d9f87f271"
 
 deployment_name = "4o"
+
+with st.sidebar:
+    st.subheader("Session ID:", divider='rainbow')
+    st.text(f"{session_id}")
 
 with st.sidebar:
     # Add deployment name selection
@@ -55,6 +87,13 @@ st.title("Deeeplabs AI Assistant")
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+#Load History
+for postgres_history.message in postgres_history.messages:
+    if postgres_history.message.type=='human':
+        st.session_state.messages.append({"role": "user", "content": postgres_history.message.content})
+    elif postgres_history.message.type=='ai':
+        st.session_state.messages.append({"role": "assistant", "content": postgres_history.message.content})
 
 if "vector_store" not in st.session_state:
     # Try to load existing vector store
@@ -178,6 +217,16 @@ with st.sidebar:
     # user_defined_system_prompt = st.text_area("Set System Prompt:", value="You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, say that you don't know. Do not answer the question from external sources apart from the documents. If no matching document is found, say you don't know. Use three sentences maximum and keep the answer concise.")
     user_defined_system_prompt = st.text_area("System Prompt:", value="You are an assistant for question-answering tasks. Use ONLY the following pieces of retrieved context to answer the question. If the answer cannot be found in the provided context, say that you don't have enough information to answer. Do not use any external knowledge. Use three sentences maximum and keep the answer concise.")
 user_defined_system_prompt += "\n\n{context}"
+
+
+
+
+
+
+
+
+
+
 
 
 ### Contextualize question ###
