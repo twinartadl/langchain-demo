@@ -24,6 +24,11 @@ from langchain_community.chat_message_histories import (
 )
 from langchain_core.documents import Document
 from langchain_core.runnables import chain
+
+from langchain_cohere import CohereEmbeddings
+from langchain_postgres import PGVector
+from langchain_postgres.vectorstores import PGVector
+
 import warnings
 # Suppress specific warning
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -47,9 +52,9 @@ st.write("Session ID: ", session_id)
 
 
 
-
+connection_string="postgresql://root:root@localhost:5433/langchain_demo_faiss"
 postgres_history = PostgresChatMessageHistory(
-    connection_string="postgresql://root:root@localhost:5433/langchain_demo_faiss",
+    connection_string=connection_string,
     session_id=session_id,
 )
 
@@ -59,6 +64,7 @@ os.environ["AZURE_OPENAI_ENDPOINT"] = "https://cog-kguqugfu5p2ki.openai.azure.co
 os.environ["AZURE_OPENAI_API_KEY"] = "4657af893faf48e5bd81208d9f87f271"
 
 deployment_name = "4o"
+
 
 with st.sidebar:
     st.subheader("Session ID:", divider='rainbow')
@@ -80,6 +86,14 @@ embeddings = AzureOpenAIEmbeddings(
     azure_deployment="embedding",
     azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
     openai_api_version=os.environ["OPENAI_API_VERSION"]
+)
+
+collection_name = "my_docs"
+vectorstore = PGVector(
+    embeddings=embeddings,
+    collection_name=collection_name,
+    connection=connection_string,
+    use_jsonb=True,
 )
 
 st.title("Deeeplabs AI Assistant")
@@ -104,6 +118,12 @@ if "vector_store" not in st.session_state:
 
 if "uploaded_files" not in st.session_state:
     st.session_state.uploaded_files = []
+
+
+
+print("vectorstore: ", vectorstore)
+
+
 
 # Create a directory to store uploaded files
 UPLOAD_DIR = "uploaded_files"
