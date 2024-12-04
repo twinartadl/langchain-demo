@@ -15,6 +15,7 @@ python-docx
 tiktoken
 docx2txt
 faiss-cpu
+psycopg[binary]==3.1.8
 # streamlit-chromadb-connection
 
 # Others
